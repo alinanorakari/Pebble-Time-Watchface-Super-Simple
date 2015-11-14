@@ -1,9 +1,9 @@
 #include <pebble.h>
 
-#define MINUTE_COLOR       GColorWhite
-#define HOUR_COLOR         GColorRed
-#define PEG_COLOR          GColorDarkGray
-#define BG_COLOR           GColorBlack
+#define KEY_BG_COLOR           0
+#define KEY_MINUTE_COLOR       1
+#define KEY_HOUR_COLOR         2
+#define KEY_PEG_COLOR          3
 
 
 #define ANTIALIASING true
@@ -30,6 +30,39 @@ static Time s_last_time;
 static int s_radius = 0;
 static bool s_animating = false;
 static float anim_offset;
+
+static GColor gcolorbg, gcolorm, gcolorh, gcolorp;
+
+static void inbox_received_handler(DictionaryIterator *iter, void *context) {
+  Tuple *colorbg_t = dict_find(iter, KEY_BG_COLOR);
+  Tuple *colorm_t = dict_find(iter, KEY_MINUTE_COLOR);
+  Tuple *colorh_t = dict_find(iter, KEY_HOUR_COLOR);
+  Tuple *colorp_t = dict_find(iter, KEY_PEG_COLOR);
+    
+  if(colorbg_t) {
+    int colorbg = colorbg_t->value->int32;
+    persist_write_int(KEY_BG_COLOR, colorbg);
+    gcolorbg = GColorFromHEX(colorbg);
+  }
+  if(colorm_t) {
+    int colorm = colorm_t->value->int32;
+    persist_write_int(KEY_MINUTE_COLOR, colorm);
+    gcolorm = GColorFromHEX(colorm);
+  }
+  if(colorh_t) {
+    int colorh = colorh_t->value->int32;
+    persist_write_int(KEY_HOUR_COLOR, colorh);
+    gcolorh = GColorFromHEX(colorh);
+  }
+  if(colorp_t) {
+    int colorp = colorp_t->value->int32;
+    persist_write_int(KEY_PEG_COLOR, colorp);
+    gcolorp = GColorFromHEX(colorp);
+  }
+  if(s_canvas_layer) {
+    layer_mark_dirty(s_canvas_layer);
+  }
+}
 
 /*************************** AnimationImplementation **************************/
 
@@ -73,7 +106,7 @@ static void tick_handler(struct tm *tick_time, TimeUnits changed) {
 static void update_proc(Layer *layer, GContext *ctx) {
   // Color background?
   GRect bounds = layer_get_bounds(layer);
-  graphics_context_set_fill_color(ctx, BG_COLOR);
+  graphics_context_set_fill_color(ctx, gcolorbg);
   graphics_fill_rect(ctx, bounds, 0, GCornerNone);
   graphics_context_set_antialiased(ctx, ANTIALIASING);
 
@@ -109,17 +142,17 @@ static void update_proc(Layer *layer, GContext *ctx) {
   // Draw hands with positive length only
   if((s_radius - HAND_MARGIN_OUTER) > HAND_MARGIN_INNER) {
     if(s_radius > 2 * HAND_MARGIN_OUTER) {
-      graphics_context_set_stroke_color(ctx, HOUR_COLOR);
+      graphics_context_set_stroke_color(ctx, gcolorh);
       graphics_context_set_stroke_width(ctx, HAND_WIDTH);
       graphics_draw_line(ctx, hour_hand_inner, hour_hand_outer);
     } 
     if(s_radius > HAND_MARGIN_OUTER) {
-      graphics_context_set_stroke_color(ctx, MINUTE_COLOR);
+      graphics_context_set_stroke_color(ctx, gcolorm);
       graphics_context_set_stroke_width(ctx, HAND_WIDTH);
       graphics_draw_line(ctx, minute_hand_inner, minute_hand_outer);
     }
   }
-  graphics_context_set_fill_color(ctx, PEG_COLOR);
+  graphics_context_set_fill_color(ctx, gcolorp);
   graphics_fill_circle(ctx, s_center, DOT_RADIUS);
 
 }
@@ -129,6 +162,31 @@ static void window_load(Window *window) {
   GRect window_bounds = layer_get_bounds(window_layer);
 
   s_center = grect_center_point(&window_bounds);
+    
+  if (persist_read_int(KEY_BG_COLOR)) {
+    int colorbg = persist_read_int(KEY_BG_COLOR);
+    gcolorbg = GColorFromHEX(colorbg);
+  } else {
+    gcolorbg=GColorBlack;
+  }
+  if (persist_read_int(KEY_MINUTE_COLOR)) {
+    int colorm = persist_read_int(KEY_MINUTE_COLOR);
+    gcolorm = GColorFromHEX(colorm);
+  } else {
+    gcolorm=GColorWhite;
+  }
+  if (persist_read_int(KEY_HOUR_COLOR)) {
+    int colorh = persist_read_int(KEY_HOUR_COLOR);
+    gcolorh = GColorFromHEX(colorh);
+  } else {
+    gcolorh=GColorRed;
+  }
+  if (persist_read_int(KEY_PEG_COLOR)) {
+    int colorp = persist_read_int(KEY_PEG_COLOR);
+    gcolorp = GColorFromHEX(colorp);
+  } else {
+    gcolorp=GColorDarkGray;
+  }
 
   s_canvas_layer = layer_create(window_bounds);
   layer_set_update_proc(s_canvas_layer, update_proc);
@@ -165,6 +223,9 @@ static void init() {
   window_stack_push(s_main_window, true);
 
   tick_timer_service_subscribe(MINUTE_UNIT, tick_handler);
+    
+  app_message_register_inbox_received(inbox_received_handler);
+  app_message_open(app_message_inbox_size_maximum(), app_message_outbox_size_maximum());
 
   // Prepare animations
   AnimationImplementation radius_impl = {
