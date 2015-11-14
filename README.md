@@ -1,1 +1,1 @@
-# Pebble-Time-Watchface---Super-Simple
+# “Super Simple” watchface for Pebble Time Round and Pebble Time
