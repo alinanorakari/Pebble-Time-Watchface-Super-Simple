@@ -163,25 +163,25 @@ static void window_load(Window *window) {
 
   s_center = grect_center_point(&window_bounds);
     
-  if (persist_read_int(KEY_BG_COLOR)) {
+  if (persist_exists(KEY_BG_COLOR)) {
     int colorbg = persist_read_int(KEY_BG_COLOR);
     gcolorbg = GColorFromHEX(colorbg);
   } else {
     gcolorbg=GColorBlack;
   }
-  if (persist_read_int(KEY_MINUTE_COLOR)) {
+  if (persist_exists(KEY_MINUTE_COLOR)) {
     int colorm = persist_read_int(KEY_MINUTE_COLOR);
     gcolorm = GColorFromHEX(colorm);
   } else {
     gcolorm=GColorWhite;
   }
-  if (persist_read_int(KEY_HOUR_COLOR)) {
+  if (persist_exists(KEY_HOUR_COLOR)) {
     int colorh = persist_read_int(KEY_HOUR_COLOR);
     gcolorh = GColorFromHEX(colorh);
   } else {
     gcolorh=GColorRed;
   }
-  if (persist_read_int(KEY_PEG_COLOR)) {
+  if (persist_exists(KEY_PEG_COLOR)) {
     int colorp = persist_read_int(KEY_PEG_COLOR);
     gcolorp = GColorFromHEX(colorp);
   } else {
