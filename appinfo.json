@@ -1,5 +1,10 @@
 {
-    "appKeys": {},
+    "appKeys": {
+        "colorbg": 0,
+        "colorh": 2,
+        "colorm": 1,
+        "colorp": 3
+    },
     "capabilities": [
         "configurable"
     ],
