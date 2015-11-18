@@ -3,7 +3,7 @@ Pebble.addEventListener('ready', function() {
 });
 
 Pebble.addEventListener('showConfiguration', function() {
-    var url='http://pebble.lastfuture.de/config/supersimple/';
+    var url='http://pebble.lastfuture.de/config/supersimple12/';
     console.log('Showing configuration page: '+url);
     Pebble.openURL(url);
 });
@@ -16,7 +16,8 @@ Pebble.addEventListener('webviewclosed', function(e) {
             colorbg: parseInt(configData.colorbg, 16),
             colorm: parseInt(configData.colorm, 16),
             colorh: parseInt(configData.colorh, 16),
-            colorp: parseInt(configData.colorp, 16)
+            colorp: parseInt(configData.colorp, 16),
+            shadows: configData.shadows === true
         }, function() {
             console.log('Send successful!');
         }, function() {

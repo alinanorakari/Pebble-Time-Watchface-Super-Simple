@@ -3,7 +3,8 @@
         "colorbg": 0,
         "colorh": 2,
         "colorm": 1,
-        "colorp": 3
+        "colorp": 3,
+        "shadows": 4
     },
     "capabilities": [
         "configurable"
@@ -21,7 +22,7 @@
         "chalk"
     ],
     "uuid": "ceeae81b-6b50-43b6-8bbb-6d6f6eb62b69",
-    "versionLabel": "1.1",
+    "versionLabel": "1.2",
     "watchapp": {
         "watchface": true
     }

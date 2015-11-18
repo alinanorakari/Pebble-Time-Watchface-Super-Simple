@@ -4,6 +4,7 @@
 #define KEY_MINUTE_COLOR       1
 #define KEY_HOUR_COLOR         2
 #define KEY_PEG_COLOR          3
+#define KEY_SHADOWS            4
 
 
 #define ANTIALIASING true
@@ -49,7 +50,7 @@ static Layer *s_canvas_layer;
 static GPoint s_center;
 static Time s_last_time;
 static int s_radius = 0;
-static bool s_animating = false;
+static bool s_animating = false, shadows = false;
 static float anim_offset;
 
 static GColor gcolorbg, gcolorm, gcolorh, gcolorp, gcolorshadow;
@@ -59,6 +60,7 @@ static void inbox_received_handler(DictionaryIterator *iter, void *context) {
   Tuple *colorm_t = dict_find(iter, KEY_MINUTE_COLOR);
   Tuple *colorh_t = dict_find(iter, KEY_HOUR_COLOR);
   Tuple *colorp_t = dict_find(iter, KEY_PEG_COLOR);
+  Tuple *shadows_t = dict_find(iter, KEY_SHADOWS);
     
   if(colorbg_t) {
     int colorbg = colorbg_t->value->int32;
@@ -80,6 +82,13 @@ static void inbox_received_handler(DictionaryIterator *iter, void *context) {
     int colorp = colorp_t->value->int32;
     persist_write_int(KEY_PEG_COLOR, colorp);
     gcolorp = GColorFromHEX(colorp);
+  }
+  if(shadows_t && shadows_t->value->int32 > 0) {
+    persist_write_bool(KEY_SHADOWS, true);
+    shadows = true;
+  } else {
+    persist_write_bool(KEY_SHADOWS, false);
+    shadows = false;
   }
   if(s_canvas_layer) {
     layer_mark_dirty(s_canvas_layer);
@@ -164,19 +173,21 @@ static void update_proc(Layer *layer, GContext *ctx) {
   // Draw hands with positive length only
   //gcolorshadow gcolorh gcolorm
   if((s_radius - HAND_MARGIN_OUTER) > HAND_MARGIN_INNER) {
-    if(s_radius > 2 * HAND_MARGIN_OUTER) {
-      graphics_context_set_stroke_color(ctx, gcolorshadow);
-      graphics_context_set_stroke_width(ctx, HAND_WIDTH);
-      hour_hand_inner.y += SHADOW_OFFSET; hour_hand_outer.y += SHADOW_OFFSET;
-      graphics_draw_line(ctx, hour_hand_inner, hour_hand_outer);
-      hour_hand_inner.y -= SHADOW_OFFSET; hour_hand_outer.y -= SHADOW_OFFSET;
-    }
-    if(s_radius > HAND_MARGIN_OUTER) {
-      graphics_context_set_stroke_color(ctx, gcolorshadow);
-      graphics_context_set_stroke_width(ctx, HAND_WIDTH);
-      minute_hand_inner.y += SHADOW_OFFSET+1; minute_hand_outer.y += SHADOW_OFFSET+1;
-      graphics_draw_line(ctx, minute_hand_inner, minute_hand_outer);
-      minute_hand_inner.y -= SHADOW_OFFSET+1; minute_hand_outer.y -= SHADOW_OFFSET+1;
+    if(shadows) {
+        if(s_radius > 2 * HAND_MARGIN_OUTER) {
+          graphics_context_set_stroke_color(ctx, gcolorshadow);
+          graphics_context_set_stroke_width(ctx, HAND_WIDTH);
+          hour_hand_inner.y += SHADOW_OFFSET; hour_hand_outer.y += SHADOW_OFFSET;
+          graphics_draw_line(ctx, hour_hand_inner, hour_hand_outer);
+          hour_hand_inner.y -= SHADOW_OFFSET; hour_hand_outer.y -= SHADOW_OFFSET;
+        }
+        if(s_radius > HAND_MARGIN_OUTER) {
+          graphics_context_set_stroke_color(ctx, gcolorshadow);
+          graphics_context_set_stroke_width(ctx, HAND_WIDTH);
+          minute_hand_inner.y += SHADOW_OFFSET+1; minute_hand_outer.y += SHADOW_OFFSET+1;
+          graphics_draw_line(ctx, minute_hand_inner, minute_hand_outer);
+          minute_hand_inner.y -= SHADOW_OFFSET+1; minute_hand_outer.y -= SHADOW_OFFSET+1;
+        }
     }
     if(s_radius > 2 * HAND_MARGIN_OUTER) {
       graphics_context_set_stroke_color(ctx, gcolorh);
@@ -204,26 +215,31 @@ static void window_load(Window *window) {
     int colorbg = persist_read_int(KEY_BG_COLOR);
     gcolorbg = GColorFromHEX(colorbg);
   } else {
-    gcolorbg=GColorBlack;
+    gcolorbg = GColorBlack;
   }
   gcolorshadow = (GColor8) shadowtable[alpha & gcolorbg.argb];
   if (persist_exists(KEY_MINUTE_COLOR)) {
     int colorm = persist_read_int(KEY_MINUTE_COLOR);
     gcolorm = GColorFromHEX(colorm);
   } else {
-    gcolorm=GColorWhite;
+    gcolorm = GColorWhite;
   }
   if (persist_exists(KEY_HOUR_COLOR)) {
     int colorh = persist_read_int(KEY_HOUR_COLOR);
     gcolorh = GColorFromHEX(colorh);
   } else {
-    gcolorh=GColorRed;
+    gcolorh = GColorRed;
   }
   if (persist_exists(KEY_PEG_COLOR)) {
     int colorp = persist_read_int(KEY_PEG_COLOR);
     gcolorp = GColorFromHEX(colorp);
   } else {
-    gcolorp=GColorDarkGray;
+    gcolorp = GColorDarkGray;
+  }
+  if (persist_exists(KEY_SHADOWS)) {
+    shadows = persist_read_bool(KEY_SHADOWS);
+  } else {
+    shadows = false;
   }
 
   s_canvas_layer = layer_create(window_bounds);
@@ -248,6 +264,8 @@ static void radius_update(Animation *anim, AnimationProgress dist_normalized) {
 
 static void init() {
   srand(time(NULL));
+    
+  //light_enable(true);
 
   time_t t = time(NULL);
   struct tm *time_now = localtime(&t);
