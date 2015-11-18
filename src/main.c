@@ -50,7 +50,7 @@ static Layer *s_canvas_layer;
 static GPoint s_center;
 static Time s_last_time;
 static int s_radius = 0;
-static bool s_animating = false, shadows = false;
+static bool s_animating = false, shadows = true;
 static float anim_offset;
 
 static GColor gcolorbg, gcolorm, gcolorh, gcolorp, gcolorshadow;
@@ -265,7 +265,9 @@ static void radius_update(Animation *anim, AnimationProgress dist_normalized) {
 static void init() {
   srand(time(NULL));
     
-  //light_enable(true);
+  if (watch_info_get_model()==WATCH_INFO_MODEL_UNKNOWN) { // keep lit only in emulator
+    light_enable(true);
+  }
 
   time_t t = time(NULL);
   struct tm *time_now = localtime(&t);
