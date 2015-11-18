@@ -13,11 +13,12 @@
 #define DOT_RADIUS         HAND_WIDTH/4
 #define HAND_MARGIN_OUTER  10-(HAND_WIDTH/2)
 #define HAND_MARGIN_INNER  0
+#define SHADOW_OFFSET      2
 
 #define ANIMATION_DURATION 600
 #define ANIMATION_DELAY    150
 
-uint8_t shadowtable[] = {192,192,192,192,192,192,192,192,192,192,192,192,192,192,192,192, \
+static uint8_t shadowtable[] = {192,192,192,192,192,192,192,192,192,192,192,192,192,192,192,192, \
                          192,192,192,192,192,192,192,192,192,192,192,192,192,192,192,192, \
                          192,192,192,192,192,192,192,192,192,192,192,192,192,192,192,192, \
                          192,192,192,192,192,192,192,192,192,192,192,192,192,192,192,192, \
@@ -34,6 +35,9 @@ uint8_t shadowtable[] = {192,192,192,192,192,192,192,192,192,192,192,192,192,192
                          224,225,226,227,228,229,230,231,232,233,234,235,236,237,238,239, \
                          240,241,242,243,244,245,246,247,248,249,250,251,252,253,254,255};
 
+// alpha should only be 0b??111111 where ?? = 00 (full shade), 01 (much shade), 10 (some shade), 11 (none shade)
+static uint8_t alpha = 0b10111111;
+
 typedef struct {
   int hours;
   int minutes;
@@ -48,7 +52,7 @@ static int s_radius = 0;
 static bool s_animating = false;
 static float anim_offset;
 
-static GColor gcolorbg, gcolorm, gcolorh, gcolorp;
+static GColor gcolorbg, gcolorm, gcolorh, gcolorp, gcolorshadow;
 
 static void inbox_received_handler(DictionaryIterator *iter, void *context) {
   Tuple *colorbg_t = dict_find(iter, KEY_BG_COLOR);
@@ -60,6 +64,7 @@ static void inbox_received_handler(DictionaryIterator *iter, void *context) {
     int colorbg = colorbg_t->value->int32;
     persist_write_int(KEY_BG_COLOR, colorbg);
     gcolorbg = GColorFromHEX(colorbg);
+    gcolorshadow = (GColor8) shadowtable[alpha & gcolorbg.argb];
   }
   if(colorm_t) {
     int colorm = colorm_t->value->int32;
@@ -157,12 +162,27 @@ static void update_proc(Layer *layer, GContext *ctx) {
     .y = (int16_t)(-cos_lookup(hour_angle) * (int32_t)HAND_MARGIN_INNER / TRIG_MAX_RATIO) + s_center.y,
   };
   // Draw hands with positive length only
+  //gcolorshadow gcolorh gcolorm
   if((s_radius - HAND_MARGIN_OUTER) > HAND_MARGIN_INNER) {
+    if(s_radius > 2 * HAND_MARGIN_OUTER) {
+      graphics_context_set_stroke_color(ctx, gcolorshadow);
+      graphics_context_set_stroke_width(ctx, HAND_WIDTH);
+      hour_hand_inner.y += SHADOW_OFFSET; hour_hand_outer.y += SHADOW_OFFSET;
+      graphics_draw_line(ctx, hour_hand_inner, hour_hand_outer);
+      hour_hand_inner.y -= SHADOW_OFFSET; hour_hand_outer.y -= SHADOW_OFFSET;
+    }
+    if(s_radius > HAND_MARGIN_OUTER) {
+      graphics_context_set_stroke_color(ctx, gcolorshadow);
+      graphics_context_set_stroke_width(ctx, HAND_WIDTH);
+      minute_hand_inner.y += SHADOW_OFFSET+1; minute_hand_outer.y += SHADOW_OFFSET+1;
+      graphics_draw_line(ctx, minute_hand_inner, minute_hand_outer);
+      minute_hand_inner.y -= SHADOW_OFFSET+1; minute_hand_outer.y -= SHADOW_OFFSET+1;
+    }
     if(s_radius > 2 * HAND_MARGIN_OUTER) {
       graphics_context_set_stroke_color(ctx, gcolorh);
       graphics_context_set_stroke_width(ctx, HAND_WIDTH);
       graphics_draw_line(ctx, hour_hand_inner, hour_hand_outer);
-    } 
+    }
     if(s_radius > HAND_MARGIN_OUTER) {
       graphics_context_set_stroke_color(ctx, gcolorm);
       graphics_context_set_stroke_width(ctx, HAND_WIDTH);
@@ -186,6 +206,7 @@ static void window_load(Window *window) {
   } else {
     gcolorbg=GColorBlack;
   }
+  gcolorshadow = (GColor8) shadowtable[alpha & gcolorbg.argb];
   if (persist_exists(KEY_MINUTE_COLOR)) {
     int colorm = persist_read_int(KEY_MINUTE_COLOR);
     gcolorm = GColorFromHEX(colorm);
