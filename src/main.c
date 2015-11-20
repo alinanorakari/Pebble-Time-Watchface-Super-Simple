@@ -138,14 +138,14 @@ static void animate(int duration, int delay, AnimationImplementation *implementa
 static void tick_handler(struct tm *tick_time, TimeUnits changed) {
   // Store time
   // dummy time in emulator
-  /*if (watch_info_get_model()==WATCH_INFO_MODEL_UNKNOWN) {
+  if (watch_info_get_model()==WATCH_INFO_MODEL_UNKNOWN) {
     s_last_time.hours = 10;
     s_last_time.minutes = 8;
-  } else { */
+  } else {
     s_last_time.hours = tick_time->tm_hour;
     s_last_time.hours -= (s_last_time.hours > 12) ? 12 : 0;
     s_last_time.minutes = tick_time->tm_min;
-  /* } */
+  }
 
   // Redraw
   if(s_canvas_layer) {
