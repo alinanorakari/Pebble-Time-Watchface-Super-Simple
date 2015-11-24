@@ -3,7 +3,14 @@ Pebble.addEventListener('ready', function() {
 });
 
 Pebble.addEventListener('showConfiguration', function() {
-    var url='http://pebble.lastfuture.de/config/supersimple13/';
+    var watch;
+    if(Pebble.getActiveWatchInfo) {
+      watch = Pebble.getActiveWatchInfo();
+    }
+    var url='http://pebble.lastfuture.de/config/supersimple14/';
+    if (watch.platform != "chalk") {
+      url += "?rect=true";
+    }
     console.log('Showing configuration page: '+url);
     Pebble.openURL(url);
 });
@@ -19,7 +26,8 @@ Pebble.addEventListener('webviewclosed', function(e) {
             colorp: parseInt(configData.colorp, 16),
             shadows: configData.shadows === true,
             ticks: configData.ticks,
-            colort: parseInt(configData.colort, 16)
+            colort: parseInt(configData.colort, 16),
+            rectticks: configData.rectticks === true
         }, function() {
             console.log('Send successful!');
         }, function() {

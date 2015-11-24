@@ -7,6 +7,7 @@
 #define KEY_SHADOWS            4
 #define KEY_TICKS              5
 #define KEY_TICK_COLOR         6
+#define KEY_RECT_TICKS         7
 
 #define ANTIALIASING true
 
@@ -51,7 +52,7 @@ static Layer *s_canvas_layer;
 static GPoint s_center;
 static Time s_last_time;
 static int animpercent = 0, ticks;
-static bool s_animating = false, shadows = true, debug = false;
+static bool s_animating = false, shadows = true, debug = false, rectticks = true;
 
 static GColor gcolorbg, gcolorm, gcolorh, gcolorp, gcolorshadow, gcolort;
 
@@ -63,6 +64,7 @@ static void inbox_received_handler(DictionaryIterator *iter, void *context) {
   Tuple *shadows_t = dict_find(iter, KEY_SHADOWS);
   Tuple *ticknum_t = dict_find(iter, KEY_TICKS);
   Tuple *colort_t = dict_find(iter, KEY_TICK_COLOR);
+  Tuple *rectticks_t = dict_find(iter, KEY_RECT_TICKS);
     
   if(colorbg_t) {
     int colorbg = colorbg_t->value->int32;
@@ -100,6 +102,13 @@ static void inbox_received_handler(DictionaryIterator *iter, void *context) {
     int colort = colort_t->value->int32;
     persist_write_int(KEY_TICK_COLOR, colort);
     gcolort = GColorFromHEX(colort);
+  }
+  if(rectticks_t && rectticks_t->value->int32 > 0) {
+    persist_write_bool(KEY_RECT_TICKS, true);
+    rectticks = true;
+  } else {
+    persist_write_bool(KEY_RECT_TICKS, false);
+    rectticks = false;
   }
   if(s_canvas_layer) {
     layer_mark_dirty(s_canvas_layer);
@@ -208,6 +217,31 @@ static void update_proc(Layer *layer, GContext *ctx) {
   
   if (ticks > 0) {
     graphics_context_set_fill_color(ctx, gcolort);
+    #if defined(PBL_RECT)
+      if (rectticks) {
+        int dist_v = 41;
+        int dist_h = 44;
+        switch (ticks) {
+          case 12:
+            graphics_fill_circle(ctx, GPoint((bounds.size.w/2)+dist_h, 4), TICK_RADIUS/2); // 1
+            graphics_fill_circle(ctx, GPoint((bounds.size.w/2)-dist_h, 4), TICK_RADIUS/2); // 11
+            graphics_fill_circle(ctx, GPoint((bounds.size.w/2)+dist_h, (bounds.size.h-5)), TICK_RADIUS/2); // 5
+            graphics_fill_circle(ctx, GPoint((bounds.size.w/2)-dist_h, (bounds.size.h-5)), TICK_RADIUS/2); // 7
+            graphics_fill_circle(ctx, GPoint((bounds.size.w-5), (bounds.size.h/2)-dist_v), TICK_RADIUS/2); // 2
+            graphics_fill_circle(ctx, GPoint((bounds.size.w-5), (bounds.size.h/2)+dist_v), TICK_RADIUS/2); // 4
+            graphics_fill_circle(ctx, GPoint(4, (bounds.size.h/2)-dist_v), TICK_RADIUS/2); // 10
+            graphics_fill_circle(ctx, GPoint(4, (bounds.size.h/2)+dist_v), TICK_RADIUS/2); // 8
+          case 4:
+            graphics_fill_circle(ctx, GPoint((bounds.size.w/2), (bounds.size.h-3)), TICK_RADIUS); // 6
+            graphics_fill_circle(ctx, GPoint((bounds.size.w-3), (bounds.size.h/2)), TICK_RADIUS); // 3
+            graphics_fill_circle(ctx, GPoint(2, (bounds.size.h/2)), TICK_RADIUS); // 9
+          case 1:
+          default:
+            graphics_fill_circle(ctx, GPoint((bounds.size.w/2), 2), TICK_RADIUS); // 12
+            break;
+        }
+      } else {
+    #endif
     GRect insetbounds = grect_inset(bounds, GEdgeInsets(2));
     GRect insetbounds12 = grect_inset(bounds, GEdgeInsets(4));
     for(int i = 0; i < ticks; i++) {
@@ -220,6 +254,9 @@ static void update_proc(Layer *layer, GContext *ctx) {
         graphics_fill_circle(ctx, pos, TICK_RADIUS);
       }
     }
+    #if defined(PBL_RECT)
+      }
+    #endif
   }
 
   if(shadows) {
@@ -294,6 +331,11 @@ static void window_load(Window *window) {
     gcolort = GColorFromHEX(colort);
   } else {
     gcolort = GColorWhite;
+  }
+  if (persist_exists(KEY_RECT_TICKS)) {
+    rectticks = persist_read_bool(KEY_RECT_TICKS);
+  } else {
+    rectticks = false;
   }
 
   s_canvas_layer = layer_create(window_bounds);

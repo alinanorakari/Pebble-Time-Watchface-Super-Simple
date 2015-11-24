@@ -5,6 +5,7 @@
         "colorm": 1,
         "colorp": 3,
         "colort": 6,
+        "rectticks": 7,
         "shadows": 4,
         "ticks": 5
     },
@@ -24,7 +25,7 @@
         "chalk"
     ],
     "uuid": "ceeae81b-6b50-43b6-8bbb-6d6f6eb62b69",
-    "versionLabel": "1.3",
+    "versionLabel": "1.4",
     "watchapp": {
         "watchface": true
     }
