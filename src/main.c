@@ -87,7 +87,7 @@ static void inbox_received_handler(DictionaryIterator *iter, void *context) {
     persist_write_int(KEY_PEG_COLOR, colorp);
     gcolorp = GColorFromHEX(colorp);
   }
-  if(shadows_t && shadows_t->value->int32 > 0) {
+  if(shadows_t && shadows_t->value->int8 > 0) {
     persist_write_bool(KEY_SHADOWS, true);
     shadows = true;
   } else {
@@ -103,7 +103,7 @@ static void inbox_received_handler(DictionaryIterator *iter, void *context) {
     persist_write_int(KEY_TICK_COLOR, colort);
     gcolort = GColorFromHEX(colort);
   }
-  if(rectticks_t && rectticks_t->value->int32 > 0) {
+  if(rectticks_t && rectticks_t->value->int8 > 0) {
     persist_write_bool(KEY_RECT_TICKS, true);
     rectticks = true;
   } else {
@@ -220,24 +220,24 @@ static void update_proc(Layer *layer, GContext *ctx) {
     #if defined(PBL_RECT)
       if (rectticks) {
         int dist_v = 41;
-        int dist_h = 44;
+        int dist_h = 46;
         switch (ticks) {
           case 12:
-            graphics_fill_circle(ctx, GPoint((bounds.size.w/2)+dist_h, 4), TICK_RADIUS/2); // 1
-            graphics_fill_circle(ctx, GPoint((bounds.size.w/2)-dist_h, 4), TICK_RADIUS/2); // 11
-            graphics_fill_circle(ctx, GPoint((bounds.size.w/2)+dist_h, (bounds.size.h-5)), TICK_RADIUS/2); // 5
-            graphics_fill_circle(ctx, GPoint((bounds.size.w/2)-dist_h, (bounds.size.h-5)), TICK_RADIUS/2); // 7
-            graphics_fill_circle(ctx, GPoint((bounds.size.w-5), (bounds.size.h/2)-dist_v), TICK_RADIUS/2); // 2
-            graphics_fill_circle(ctx, GPoint((bounds.size.w-5), (bounds.size.h/2)+dist_v), TICK_RADIUS/2); // 4
-            graphics_fill_circle(ctx, GPoint(4, (bounds.size.h/2)-dist_v), TICK_RADIUS/2); // 10
-            graphics_fill_circle(ctx, GPoint(4, (bounds.size.h/2)+dist_v), TICK_RADIUS/2); // 8
+            graphics_fill_circle(ctx, GPoint((bounds.size.w/2)+dist_h-1, 4), TICK_RADIUS/2); // 1
+            graphics_fill_circle(ctx, GPoint((bounds.size.w/2)-dist_h-1, 4), TICK_RADIUS/2); // 11
+            graphics_fill_circle(ctx, GPoint((bounds.size.w/2)+dist_h-1, (bounds.size.h-5)), TICK_RADIUS/2); // 5
+            graphics_fill_circle(ctx, GPoint((bounds.size.w/2)-dist_h-1, (bounds.size.h-5)), TICK_RADIUS/2); // 7
+            graphics_fill_circle(ctx, GPoint((bounds.size.w-5), (bounds.size.h/2)-dist_v-1), TICK_RADIUS/2); // 2
+            graphics_fill_circle(ctx, GPoint((bounds.size.w-5), (bounds.size.h/2)+dist_v-1), TICK_RADIUS/2); // 4
+            graphics_fill_circle(ctx, GPoint(4, (bounds.size.h/2)-dist_v-1), TICK_RADIUS/2); // 10
+            graphics_fill_circle(ctx, GPoint(4, (bounds.size.h/2)+dist_v-1), TICK_RADIUS/2); // 8
           case 4:
-            graphics_fill_circle(ctx, GPoint((bounds.size.w/2), (bounds.size.h-3)), TICK_RADIUS); // 6
-            graphics_fill_circle(ctx, GPoint((bounds.size.w-3), (bounds.size.h/2)), TICK_RADIUS); // 3
-            graphics_fill_circle(ctx, GPoint(2, (bounds.size.h/2)), TICK_RADIUS); // 9
+            graphics_fill_circle(ctx, GPoint((bounds.size.w/2)-1, (bounds.size.h-3)), TICK_RADIUS); // 6
+            graphics_fill_circle(ctx, GPoint((bounds.size.w-3), (bounds.size.h/2)-1), TICK_RADIUS); // 3
+            graphics_fill_circle(ctx, GPoint(2, (bounds.size.h/2)-1), TICK_RADIUS); // 9
           case 1:
           default:
-            graphics_fill_circle(ctx, GPoint((bounds.size.w/2), 2), TICK_RADIUS); // 12
+            graphics_fill_circle(ctx, GPoint((bounds.size.w/2)-1, 2), TICK_RADIUS); // 12
             break;
         }
       } else {

@@ -24,10 +24,10 @@ Pebble.addEventListener('webviewclosed', function(e) {
             colorm: parseInt(configData.colorm, 16),
             colorh: parseInt(configData.colorh, 16),
             colorp: parseInt(configData.colorp, 16),
-            shadows: configData.shadows === 'true',
+            shadows: 0+(configData.shadows === 'true'),
             ticks: configData.ticks,
             colort: parseInt(configData.colort, 16),
-            rectticks: configData.rectticks === 'true'
+            rectticks: 0+(configData.rectticks === 'true')
         }, function() {
             console.log('Send successful!');
         }, function() {
