@@ -111,7 +111,7 @@ static void inbox_received_handler(DictionaryIterator *iter, void *context) {
     rectticks = false;
   }
   if(bg_canvas_layer) {
-    layer_mark_dirty(s_canvas_layer);
+    layer_mark_dirty(bg_canvas_layer);
   }
   if(s_canvas_layer) {
     layer_mark_dirty(s_canvas_layer);
@@ -148,7 +148,7 @@ static void animate(int duration, int delay, AnimationImplementation *implementa
 static void tick_handler(struct tm *tick_time, TimeUnits changed) {
   // Store time
   // dummy time in emulator
-  if (watch_info_get_model()==WATCH_INFO_MODEL_UNKNOWN) {
+  if (debug) {
     s_last_time.hours = 0;
     s_last_time.minutes = tick_time->tm_sec;
   } else {
