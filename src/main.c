@@ -221,23 +221,25 @@ static void update_proc(Layer *layer, GContext *ctx) {
       if (rectticks) {
         int dist_v = 41;
         int dist_h = 46;
+        int halfwidth = (bounds.size.w/2)-1;
+        int halfheight = (bounds.size.h/2)-1;
         switch (ticks) {
           case 12:
-            graphics_fill_circle(ctx, GPoint((bounds.size.w/2)+dist_h-1, 4), TICK_RADIUS/2); // 1
-            graphics_fill_circle(ctx, GPoint((bounds.size.w/2)-dist_h-1, 4), TICK_RADIUS/2); // 11
-            graphics_fill_circle(ctx, GPoint((bounds.size.w/2)+dist_h-1, (bounds.size.h-5)), TICK_RADIUS/2); // 5
-            graphics_fill_circle(ctx, GPoint((bounds.size.w/2)-dist_h-1, (bounds.size.h-5)), TICK_RADIUS/2); // 7
-            graphics_fill_circle(ctx, GPoint((bounds.size.w-5), (bounds.size.h/2)-dist_v-1), TICK_RADIUS/2); // 2
-            graphics_fill_circle(ctx, GPoint((bounds.size.w-5), (bounds.size.h/2)+dist_v-1), TICK_RADIUS/2); // 4
-            graphics_fill_circle(ctx, GPoint(4, (bounds.size.h/2)-dist_v-1), TICK_RADIUS/2); // 10
-            graphics_fill_circle(ctx, GPoint(4, (bounds.size.h/2)+dist_v-1), TICK_RADIUS/2); // 8
+            graphics_fill_circle(ctx, GPoint(halfwidth+dist_h, 4), TICK_RADIUS/2); // 1
+            graphics_fill_circle(ctx, GPoint(halfwidth-dist_h, 4), TICK_RADIUS/2); // 11
+            graphics_fill_circle(ctx, GPoint(halfwidth+dist_h, (bounds.size.h-5)), TICK_RADIUS/2); // 5
+            graphics_fill_circle(ctx, GPoint(halfwidth-dist_h, (bounds.size.h-5)), TICK_RADIUS/2); // 7
+            graphics_fill_circle(ctx, GPoint((bounds.size.w-5), halfheight-dist_v), TICK_RADIUS/2); // 2
+            graphics_fill_circle(ctx, GPoint((bounds.size.w-5), halfheight+dist_v), TICK_RADIUS/2); // 4
+            graphics_fill_circle(ctx, GPoint(4, halfheight-dist_v), TICK_RADIUS/2); // 10
+            graphics_fill_circle(ctx, GPoint(4, halfheight+dist_v), TICK_RADIUS/2); // 8
           case 4:
-            graphics_fill_circle(ctx, GPoint((bounds.size.w/2)-1, (bounds.size.h-3)), TICK_RADIUS); // 6
-            graphics_fill_circle(ctx, GPoint((bounds.size.w-3), (bounds.size.h/2)-1), TICK_RADIUS); // 3
-            graphics_fill_circle(ctx, GPoint(2, (bounds.size.h/2)-1), TICK_RADIUS); // 9
+            graphics_fill_circle(ctx, GPoint(halfwidth, (bounds.size.h-3)), TICK_RADIUS); // 6
+            graphics_fill_circle(ctx, GPoint((bounds.size.w-3), halfheight), TICK_RADIUS); // 3
+            graphics_fill_circle(ctx, GPoint(2, halfheight), TICK_RADIUS); // 9
           case 1:
           default:
-            graphics_fill_circle(ctx, GPoint((bounds.size.w/2)-1, 2), TICK_RADIUS); // 12
+            graphics_fill_circle(ctx, GPoint(halfwidth, 2), TICK_RADIUS); // 12
             break;
         }
       } else {
