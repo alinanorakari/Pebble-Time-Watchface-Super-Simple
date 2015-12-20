@@ -6,9 +6,11 @@
         "colorm": 1,
         "colorp": 3,
         "colort": 6,
+        "invert": 9,
         "rectticks": 7,
         "shadows": 4,
-        "ticks": 5
+        "ticks": 5,
+        "whwidth": 10
     },
     "capabilities": [
         "configurable"
@@ -22,11 +24,12 @@
     "sdkVersion": "3",
     "shortName": "Super Simple",
     "targetPlatforms": [
+        "aplite",
         "basalt",
         "chalk"
     ],
     "uuid": "ceeae81b-6b50-43b6-8bbb-6d6f6eb62b69",
-    "versionLabel": "1.7",
+    "versionLabel": "1.8",
     "watchapp": {
         "watchface": true
     }

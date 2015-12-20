@@ -9,12 +9,12 @@
 #define KEY_TICK_COLOR         6
 #define KEY_RECT_TICKS         7
 #define KEY_BT_VIBE            8
+#define KEY_INVERT             9
+#define KEY_HAND_WIDTH        10
 
 #define ANTIALIASING true
 
-#define HAND_WIDTH             7
 #define TICK_RADIUS            3
-#define DOT_RADIUS             HAND_WIDTH/4
 #define HAND_MARGIN_M          16
 #define HAND_MARGIN_H          42
 #define SHADOW_OFFSET          2
@@ -52,10 +52,28 @@ static Layer *bg_canvas_layer, *s_canvas_layer;
 
 static GPoint s_center;
 static Time s_last_time;
-static int animpercent = 0, ticks;
-static bool s_animating = false, shadows = true, debug = false, rectticks = true, btvibe = false;
+static int animpercent = 0, ticks = 0, whwidth = 7;
+static bool s_animating = false, shadows = true, debug = false, rectticks = true, btvibe = false, invert = false;
 
 static GColor gcolorbg, gcolorm, gcolorh, gcolorp, gcolorshadow, gcolort;
+
+static void handle_bw_colors() {
+  if (!invert) {
+    gcolorbg = GColorBlack;
+    gcolorm = GColorWhite;
+    gcolorh = GColorWhite;
+    gcolorp = GColorBlack;
+    gcolort = GColorWhite;
+    shadows = false;
+  } else {
+    gcolorbg = GColorWhite;
+    gcolorm = GColorBlack;
+    gcolorh = GColorBlack;
+    gcolorp = GColorWhite;
+    gcolort = GColorBlack;
+    shadows = false;
+  }
+}
 
 static void inbox_received_handler(DictionaryIterator *iter, void *context) {
   Tuple *colorbg_t = dict_find(iter, KEY_BG_COLOR);
@@ -67,43 +85,56 @@ static void inbox_received_handler(DictionaryIterator *iter, void *context) {
   Tuple *colort_t = dict_find(iter, KEY_TICK_COLOR);
   Tuple *rectticks_t = dict_find(iter, KEY_RECT_TICKS);
   Tuple *btvibe_t = dict_find(iter, KEY_BT_VIBE);
-    
-  if(colorbg_t) {
-    int colorbg = colorbg_t->value->int32;
-    persist_write_int(KEY_BG_COLOR, colorbg);
-    gcolorbg = GColorFromHEX(colorbg);
-    gcolorshadow = (GColor8) shadowtable[alpha & gcolorbg.argb];
-  }
-  if(colorm_t) {
-    int colorm = colorm_t->value->int32;
-    persist_write_int(KEY_MINUTE_COLOR, colorm);
-    gcolorm = GColorFromHEX(colorm);
-  }
-  if(colorh_t) {
-    int colorh = colorh_t->value->int32;
-    persist_write_int(KEY_HOUR_COLOR, colorh);
-    gcolorh = GColorFromHEX(colorh);
-  }
-  if(colorp_t) {
-    int colorp = colorp_t->value->int32;
-    persist_write_int(KEY_PEG_COLOR, colorp);
-    gcolorp = GColorFromHEX(colorp);
-  }
-  if(shadows_t && shadows_t->value->int8 > 0) {
-    persist_write_bool(KEY_SHADOWS, true);
-    shadows = true;
-  } else {
-    persist_write_bool(KEY_SHADOWS, false);
-    shadows = false;
-  }
+  Tuple *invert_t = dict_find(iter, KEY_INVERT);
+  Tuple *whwidth_t = dict_find(iter, KEY_HAND_WIDTH);
+  
+  #if defined(PBL_COLOR)
+    if(colorbg_t) {
+      int colorbg = colorbg_t->value->int32;
+      persist_write_int(KEY_BG_COLOR, colorbg);
+      gcolorbg = GColorFromHEX(colorbg);
+      gcolorshadow = (GColor8) shadowtable[alpha & gcolorbg.argb];
+    }
+    if(colorm_t) {
+      int colorm = colorm_t->value->int32;
+      persist_write_int(KEY_MINUTE_COLOR, colorm);
+      gcolorm = GColorFromHEX(colorm);
+    }
+    if(colorh_t) {
+      int colorh = colorh_t->value->int32;
+      persist_write_int(KEY_HOUR_COLOR, colorh);
+      gcolorh = GColorFromHEX(colorh);
+    }
+    if(colorp_t) {
+      int colorp = colorp_t->value->int32;
+      persist_write_int(KEY_PEG_COLOR, colorp);
+      gcolorp = GColorFromHEX(colorp);
+    }
+    if(colort_t) {
+      int colort = colort_t->value->int32;
+      persist_write_int(KEY_TICK_COLOR, colort);
+      gcolort = GColorFromHEX(colort);
+    }
+    if(shadows_t && shadows_t->value->int8 > 0) {
+      persist_write_bool(KEY_SHADOWS, true);
+      shadows = true;
+    } else {
+      persist_write_bool(KEY_SHADOWS, false);
+      shadows = false;
+    }
+  #elif defined(PBL_BW)
+    if(invert_t && invert_t->value->int8 > 0) {
+      persist_write_bool(KEY_INVERT, true);
+      invert = true;
+    } else {
+      persist_write_bool(KEY_INVERT, false);
+      invert = false;
+    }
+    handle_bw_colors();
+  #endif
   if(ticknum_t) {
     ticks = ticknum_t->value->uint8;
     persist_write_int(KEY_TICKS, ticks);
-  }
-  if(colort_t) {
-    int colort = colort_t->value->int32;
-    persist_write_int(KEY_TICK_COLOR, colort);
-    gcolort = GColorFromHEX(colort);
   }
   if(rectticks_t && rectticks_t->value->int8 > 0) {
     persist_write_bool(KEY_RECT_TICKS, true);
@@ -119,6 +150,11 @@ static void inbox_received_handler(DictionaryIterator *iter, void *context) {
     persist_write_bool(KEY_BT_VIBE, false);
     btvibe = false;
   }
+  if(whwidth_t) {
+    whwidth = whwidth_t->value->uint8;
+    persist_write_int(KEY_HAND_WIDTH, whwidth);
+  }
+
   if(bg_canvas_layer) {
     layer_mark_dirty(bg_canvas_layer);
   }
@@ -291,7 +327,7 @@ static void update_proc(Layer *layer, GContext *ctx) {
   
   if(shadows) {
     graphics_context_set_stroke_color(ctx, gcolorshadow);
-    graphics_context_set_stroke_width(ctx, HAND_WIDTH);
+    graphics_context_set_stroke_width(ctx, whwidth);
     hour_hand_outer.y += SHADOW_OFFSET;
     s_center.y += SHADOW_OFFSET;
     graphics_draw_line(ctx, s_center, hour_hand_outer);
@@ -303,13 +339,13 @@ static void update_proc(Layer *layer, GContext *ctx) {
     s_center.y -= SHADOW_OFFSET+1;
   }
   graphics_context_set_stroke_color(ctx, gcolorh);
-  graphics_context_set_stroke_width(ctx, HAND_WIDTH);
+  graphics_context_set_stroke_width(ctx, whwidth);
   graphics_draw_line(ctx, s_center, hour_hand_outer);
   graphics_context_set_stroke_color(ctx, gcolorm);
-  graphics_context_set_stroke_width(ctx, HAND_WIDTH);
+  graphics_context_set_stroke_width(ctx, whwidth);
   graphics_draw_line(ctx, s_center, minute_hand_outer);
   graphics_context_set_fill_color(ctx, gcolorp);
-  graphics_fill_circle(ctx, s_center, DOT_RADIUS);
+  graphics_fill_circle(ctx, s_center, whwidth/4);
 
 }
 
@@ -320,47 +356,56 @@ static void window_load(Window *window) {
   s_center = grect_center_point(&window_bounds);
   s_center.x -= 1;
   s_center.y -= 1;
-    
-  if (persist_exists(KEY_BG_COLOR)) {
-    int colorbg = persist_read_int(KEY_BG_COLOR);
-    gcolorbg = GColorFromHEX(colorbg);
-  } else {
-    gcolorbg = GColorBlack;
-  }
-  gcolorshadow = (GColor8) shadowtable[alpha & gcolorbg.argb];
-  if (persist_exists(KEY_MINUTE_COLOR)) {
-    int colorm = persist_read_int(KEY_MINUTE_COLOR);
-    gcolorm = GColorFromHEX(colorm);
-  } else {
-    gcolorm = GColorWhite;
-  }
-  if (persist_exists(KEY_HOUR_COLOR)) {
-    int colorh = persist_read_int(KEY_HOUR_COLOR);
-    gcolorh = GColorFromHEX(colorh);
-  } else {
-    gcolorh = GColorRed;
-  }
-  if (persist_exists(KEY_PEG_COLOR)) {
-    int colorp = persist_read_int(KEY_PEG_COLOR);
-    gcolorp = GColorFromHEX(colorp);
-  } else {
-    gcolorp = GColorDarkGray;
-  }
-  if (persist_exists(KEY_SHADOWS)) {
-    shadows = persist_read_bool(KEY_SHADOWS);
-  } else {
-    shadows = false;
-  }
+  
+  #if defined(PBL_COLOR)
+    if (persist_exists(KEY_BG_COLOR)) {
+      int colorbg = persist_read_int(KEY_BG_COLOR);
+      gcolorbg = GColorFromHEX(colorbg);
+    } else {
+      gcolorbg = GColorBlack;
+    }
+    gcolorshadow = (GColor8) shadowtable[alpha & gcolorbg.argb];
+    if (persist_exists(KEY_MINUTE_COLOR)) {
+      int colorm = persist_read_int(KEY_MINUTE_COLOR);
+      gcolorm = GColorFromHEX(colorm);
+    } else {
+      gcolorm = GColorWhite;
+    }
+    if (persist_exists(KEY_HOUR_COLOR)) {
+      int colorh = persist_read_int(KEY_HOUR_COLOR);
+      gcolorh = GColorFromHEX(colorh);
+    } else {
+      gcolorh = GColorRed;
+    }
+    if (persist_exists(KEY_PEG_COLOR)) {
+      int colorp = persist_read_int(KEY_PEG_COLOR);
+      gcolorp = GColorFromHEX(colorp);
+    } else {
+      gcolorp = GColorDarkGray;
+    }
+    if (persist_exists(KEY_TICK_COLOR)) {
+      int colort = persist_read_int(KEY_TICK_COLOR);
+      gcolort = GColorFromHEX(colort);
+    } else {
+      gcolort = GColorWhite;
+    }
+    if (persist_exists(KEY_SHADOWS)) {
+      shadows = persist_read_bool(KEY_SHADOWS);
+    } else {
+      shadows = false;
+    }
+  #elif defined(PBL_BW)
+    if (persist_exists(KEY_INVERT)) {
+      invert = persist_read_bool(KEY_INVERT);
+    } else {
+      invert = false;
+    }
+    handle_bw_colors();
+  #endif
   if (persist_exists(KEY_TICKS)) {
     ticks = persist_read_int(KEY_TICKS);
   } else {
     ticks = 0;
-  }
-  if (persist_exists(KEY_TICK_COLOR)) {
-    int colort = persist_read_int(KEY_TICK_COLOR);
-    gcolort = GColorFromHEX(colort);
-  } else {
-    gcolort = GColorWhite;
   }
   if (persist_exists(KEY_RECT_TICKS)) {
     rectticks = persist_read_bool(KEY_RECT_TICKS);
@@ -371,6 +416,11 @@ static void window_load(Window *window) {
     btvibe = persist_read_bool(KEY_BT_VIBE);
   } else {
     btvibe = false;
+  }
+  if (persist_exists(KEY_HAND_WIDTH)) {
+    whwidth = persist_read_int(KEY_HAND_WIDTH);
+  } else {
+    whwidth = 7;
   }
 
   bg_canvas_layer = layer_create(window_bounds);
