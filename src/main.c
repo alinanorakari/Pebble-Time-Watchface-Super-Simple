@@ -195,8 +195,12 @@ static void tick_handler(struct tm *tick_time, TimeUnits changed) {
   // Store time
   // dummy time in emulator
   if (debug) {
+    /*
     s_last_time.hours = 0;
     s_last_time.minutes = tick_time->tm_sec;
+    */
+    s_last_time.hours = 10;
+    s_last_time.minutes = 8;
   } else {
     s_last_time.hours = tick_time->tm_hour;
     s_last_time.hours -= (s_last_time.hours > 12) ? 12 : 0;
